@@ -352,8 +352,7 @@
       <span class="name-italic" id="typed-name"></span>
     </h1>
     <div class="hero-divider"></div>
-    <p class="hero-sub" id="typed-sub"></p>
-    <span class="typer-cursor" id="typer-cursor"></span>
+    <p class="hero-sub" id="typed-sub"><span class="typer-cursor" id="typer-cursor"></span></p>
   </div>
 
   <!-- About -->
@@ -489,22 +488,39 @@ const subEl  = document.getElementById('typed-sub');
 const curEl  = document.getElementById('typer-cursor');
 const spd = 65;
 
+// For subEl: text lives in a text node BEFORE the cursor span
+function getSubText() {
+  const node = subEl.firstChild;
+  return (node && node.nodeType === 3) ? node.textContent : '';
+}
+function setSubText(t) {
+  let node = subEl.firstChild;
+  if (!node || node.nodeType !== 3) {
+    node = document.createTextNode('');
+    subEl.insertBefore(node, subEl.firstChild);
+  }
+  node.textContent = t;
+}
+
 function type(el, text, cb, delay=0) {
   setTimeout(() => {
     let i=0;
     function tick() {
       if(i>text.length){if(cb)cb();return;}
-      el.textContent=text.slice(0,i++);
+      if(el === subEl) setSubText(text.slice(0,i++));
+      else el.textContent=text.slice(0,i++);
       setTimeout(tick, spd+Math.random()*35);
     }
     tick();
   }, delay);
 }
 function typeSuffix(el, suffix, cb) {
-  const prefix=el.textContent; let i=0;
+  const prefix = el === subEl ? getSubText() : el.textContent;
+  let i=0;
   function tick() {
     if(i>suffix.length){if(cb)cb();return;}
-    el.textContent=prefix+suffix.slice(0,i++);
+    if(el === subEl) setSubText(prefix+suffix.slice(0,i++));
+    else el.textContent=prefix+suffix.slice(0,i++);
     setTimeout(tick,spd+Math.random()*35);
   }
   tick();
@@ -512,8 +528,12 @@ function typeSuffix(el, suffix, cb) {
 function eraseToPrefix(el, prefix, cb) {
   setTimeout(() => {
     function tick() {
-      if(el.textContent.length<=prefix.length){el.textContent=prefix;if(cb)cb();return;}
-      el.textContent=el.textContent.slice(0,-1);
+      const cur = el === subEl ? getSubText() : el.textContent;
+      if(cur.length<=prefix.length){
+        if(el===subEl) setSubText(prefix); else el.textContent=prefix;
+        if(cb)cb(); return;
+      }
+      if(el===subEl) setSubText(cur.slice(0,-1)); else el.textContent=cur.slice(0,-1);
       setTimeout(tick, 42+Math.random()*22);
     }
     tick();
